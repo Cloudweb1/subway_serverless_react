@@ -1,0 +1,7 @@
+.subway-image {
+  width: 55px;
+  margin: 0;
+}
+.reverse {
+  transform: scaleX(-1);
+}
