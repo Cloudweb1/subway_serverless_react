@@ -1,14 +1,15 @@
 import subwayImg from '../assets/imgs/subway_paint.png';
-import CongestionInfo from './CongestionInfo';
 import '../styles/TrainIcon.css';
+import CongestionInfo from './CongestionInfo';
 
 export default function TrainIcon({ align, arriveTime, congestion, reverse }) {
   const timecalc = arriveTime => {
     let currentMin = Number(new Date().getMinutes());
     let arriveMin = Number(arriveTime.slice(-2));
 
-    if (isNaN(currentMin) || isNaN(arriveMin) || arriveMin - currentMin >= 9) return 0;
-    else if (arriveMin - currentMin >= 0) {
+    if (isNaN(currentMin) || isNaN(arriveMin) || arriveMin - currentMin >= 9) {
+      return 0;
+    } else if (arriveMin - currentMin >= 0) {
       return 9 - (arriveMin - currentMin);
     } else {
       return 9 - (arriveMin - currentMin + 60);
