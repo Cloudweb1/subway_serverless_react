@@ -3,6 +3,7 @@ import http from '../http';
 import '../styles/MetroInfoPage.css';
 import MetroBasicInfo from './MetroBasicInfo';
 import MetroDetailedInfo from './MetroDetailedInfo';
+import MetroReloadButton from './MetroReloadButton';
 
 export default function MetroInfo({ stationId, lineNumber, name }) {
   const [prevStationName, setPrevStationName] = useState('이전역 없음');
@@ -36,7 +37,7 @@ export default function MetroInfo({ stationId, lineNumber, name }) {
       fetchCongestions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isCongestionLoaded]);
 
   useEffect(() => {
     async function fetchArrivals() {
@@ -60,30 +61,40 @@ export default function MetroInfo({ stationId, lineNumber, name }) {
       fetchArrivals();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isArrivalLoaded]);
+
+  const handleReload = event => {
+    setIsArrivalLoaded(false);
+    setIsCongestionLoaded(false);
+  };
 
   return (
-    <div className="metroItem2">
-      <MetroBasicInfo stationId={stationId} lineNumber={lineNumber} name={name} />
-      {isCongestionLoaded && isArrivalLoaded ? (
-        <>
-          <MetroDetailedInfo
-            stationName={prevStationName}
-            align="left"
-            arriveTimes={downboundArrivals}
-            congestion={downboundCongestion}
-            reverseImage
-          />
-          <MetroDetailedInfo
-            stationName={nextStationName}
-            align="right"
-            arriveTimes={upboundArrivals}
-            congestion={upboundCongestion}
-          />
-        </>
-      ) : (
-        <div>Loading...</div>
-      )}
+    <div className="metro-item-wrapper">
+      <div className="metroItem2">
+        <MetroBasicInfo stationId={stationId} lineNumber={lineNumber} name={name} />
+        {isCongestionLoaded && isArrivalLoaded ? (
+          <>
+            <MetroDetailedInfo
+              stationName={prevStationName}
+              align="left"
+              arriveTimes={downboundArrivals}
+              congestion={downboundCongestion}
+              reverseImage
+            />
+            <MetroDetailedInfo
+              stationName={nextStationName}
+              align="right"
+              arriveTimes={upboundArrivals}
+              congestion={upboundCongestion}
+            />
+          </>
+        ) : (
+          <div>Loading...</div>
+        )}
+      </div>
+      <div className="reload-wrapper">
+        <MetroReloadButton lineNumber={lineNumber} reloadHandler={handleReload} />
+      </div>
     </div>
   );
 }
