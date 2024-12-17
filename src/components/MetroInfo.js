@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
+import http from '../http';
 import '../styles/MetroInfoPage.css';
 import MetroBasicInfo from './MetroBasicInfo';
-import http from '../http';
 import MetroDetailedInfo from './MetroDetailedInfo';
 
 export default function MetroInfo({ stationId, lineNumber, name }) {
-  const [prevStationName, setPrevStationName] = useState('--');
-  const [nextStationName, setNextStationName] = useState('--');
+  const [prevStationName, setPrevStationName] = useState('이전역 없음');
+  const [nextStationName, setNextStationName] = useState('다음역 없음');
 
   const [isCongestionLoaded, setIsCongestionLoaded] = useState(false);
-  const [upboundCongestions, setUpboundCongestions] = useState({});
-  const [downboundCongestions, setDownboundCongestions] = useState({});
+  const [upboundCongestion, setUpboundCongestion] = useState(0);
+  const [downboundCongestion, setDownboundCongestion] = useState(0);
 
   const [isArrivalLoaded, setIsArrivalLoaded] = useState(false);
   const [upboundArrivals, setUpboundArrivals] = useState([]);
@@ -20,16 +20,14 @@ export default function MetroInfo({ stationId, lineNumber, name }) {
   useEffect(() => {
     async function fetchCongestions() {
       try {
-        const response = await http.get(`/api/metro/stations/${encodeURIComponent(name)}/congestions`);
-        const data = response.data.filter(datum => datum.lineNumber === lineNumber).pop();
-        setUpboundCongestions(data.upDegree);
-        setDownboundCongestions(data.downDegree);
+        const response = await http.get(`/api/metro/stations/${stationId}/congestions`);
+        const data = response.data;
+        setUpboundCongestion(data.upDegree);
+        setDownboundCongestion(data.downDegree);
       } catch (error) {
         if (process.env.NODE_ENV !== 'production') {
           console.error(error);
         }
-        setUpboundCongestions({ time: '--:--', degree: '0.0' });
-        setDownboundCongestions({ time: '--:--', degree: '0.0' });
       }
       setIsCongestionLoaded(true);
     }
@@ -43,53 +41,17 @@ export default function MetroInfo({ stationId, lineNumber, name }) {
   useEffect(() => {
     async function fetchArrivals() {
       try {
-        const response = await http.get(`/api/metro/stations/${encodeURIComponent(name)}/arrivals`);
+        const response = await http.get(`/api/metro/stations/${stationId}/arrivals`);
         const data = response.data;
 
-        const upbound = [];
-        const downbound = [];
-        let prevStation = '';
-        let nextStation = '';
-
-        data.forEach(datum => {
-          // 상행선은 이전역과 다음역이 반대여야함
-          if (datum.lineNumber === parseInt(lineNumber) && datum.direction === '1') {
-            upbound.push(datum);
-            if (!prevStation) {
-              prevStation = datum.nextStation;
-            }
-            if (!nextStation) {
-              nextStation = datum.prevStation;
-            }
-          } else if (datum.lineNumber === parseInt(lineNumber) && datum.direction === '2') {
-            downbound.push(datum);
-            if (!prevStation) {
-              prevStation = datum.prevStation;
-            }
-            if (!nextStation) {
-              nextStation = datum.nextStation;
-            }
-          }
-        });
-
-        setUpboundArrivals(upbound);
-        setDownboundArrivals(downbound);
-        setPrevStationName(prevStation);
-        setNextStationName(nextStation);
+        setPrevStationName(data.prevStation);
+        setNextStationName(data.nextStation);
+        setUpboundArrivals(data.arrivals.upbound);
+        setDownboundArrivals(data.arrivals.downbound);
       } catch (error) {
         if (process.env.NODE_ENV !== 'production') {
           console.error(error);
         }
-        setUpboundArrivals([
-          { arriveTime: '--:--', direction: '1', lineNumber, name, nextStation: '--', prevStation: '--' },
-          { arriveTime: '--:--', direction: '1', lineNumber, name, nextStation: '--', prevStation: '--' },
-        ]);
-        setDownboundArrivals([
-          { arriveTime: '--:--', direction: '2', lineNumber, name, nextStation: '--', prevStation: '--' },
-          { arriveTime: '--:--', direction: '2', lineNumber, name, nextStation: '--', prevStation: '--' },
-        ]);
-        setPrevStationName('--');
-        setNextStationName('--');
       }
       setIsArrivalLoaded(true);
     }
@@ -108,15 +70,15 @@ export default function MetroInfo({ stationId, lineNumber, name }) {
           <MetroDetailedInfo
             stationName={prevStationName}
             align="left"
-            arriveTimes={downboundArrivals.map(arrival => arrival.arriveTime)}
-            congestion={downboundCongestions.degree}
+            arriveTimes={downboundArrivals}
+            congestion={downboundCongestion}
             reverseImage
           />
           <MetroDetailedInfo
             stationName={nextStationName}
             align="right"
-            arriveTimes={upboundArrivals.map(arrival => arrival.arriveTime)}
-            congestion={upboundCongestions.degree}
+            arriveTimes={upboundArrivals}
+            congestion={upboundCongestion}
           />
         </>
       ) : (
